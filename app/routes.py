@@ -1,6 +1,7 @@
 from flask import render_template, redirect, session, url_for, flash, request, jsonify, session
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlparse
+import pulp as pl
 
 from . import app, db
 from .models import User, get_shift_model, initialize_shift_table
@@ -8,6 +9,7 @@ from .forms import LoginForm, RegistrationForm, ShiftPreferenceForm
 from datetime import datetime
 import json
 
+from calendar import monthrange
 from sqlalchemy import inspect
 
 @app.route('/')
@@ -223,3 +225,79 @@ def fetch_all_users_schedules():
             results.append({'username': user_shifts.username, 'dates': dates})
 
     return jsonify(results)
+
+
+@app.route('/generate_schedule', methods=['POST'])
+@login_required
+def generate_schedule():
+    data = request.get_json()
+    year = int(data['year'])
+    month = int(data['month'])
+    days_in_month = monthrange(year, month)[1]
+
+    print(f"data: {data}, year: {year}, month: {month}, days_in_month: {days_in_month}.")
+    # Fetch the model for the specific month and year
+    ShiftModel = get_shift_model(year, month)
+    all_user_preferences = ShiftModel.query.all()
+
+    num_users = len(all_user_preferences)
+
+    # Generate distinct colors
+    colors = generate_distinct_colors(num_users)
+    user_colors = {user.username: colors[i % num_users] for i, user in enumerate(all_user_preferences)}
+
+    # Problem setup
+    prob = pl.LpProblem("Shift_Scheduling", pl.LpMinimize)
+
+    # Variables: shifts[(username, day)] == 1 if user works on 'day', else 0
+    shifts = {(user.username, day): pl.LpVariable(f"shift_{user.username}_{day}", cat='Binary')
+              for user in all_user_preferences for day in range(1, days_in_month + 1)}
+    
+    print(f"shifts: {shifts}.")
+
+    # Objective: Dummy objective, could be improved based on further requirements
+    prob += 0
+
+    # Constraints
+    # Each day exactly one person must work
+    for day in range(1, days_in_month + 1):
+        prob += pl.lpSum(shifts[(user.username, day)] for user in all_user_preferences) == 1, f"One_user_per_day_{day}"
+
+    # Each person works at least min_shifts and at most max_shifts if available
+    for user in all_user_preferences:
+        available_days = [day for day in range(1, days_in_month + 1) if getattr(user, f'day_{day}', False)]
+        if available_days:
+            prob += pl.lpSum(shifts[(user.username, day)] for day in available_days) >= user.min_shifts, f"Min_shifts_{user.username}"
+            prob += pl.lpSum(shifts[(user.username, day)] for day in available_days) <= user.max_shifts, f"Max_shifts_{user.username}"
+        
+        # Set shifts to 0 for days the user is not available
+        unavailable_days = set(range(1, days_in_month + 1)) - set(available_days)
+        for day in unavailable_days:
+            prob += shifts[(user.username, day)] == 0, f"Shift_not_possible_{user.username}_{day}"
+
+    prob.writeLP("out.lp")
+
+    # Solve the problem
+    prob.solve()
+
+    # Check if a valid solution exists
+    if pl.LpStatus[prob.status] == 'Optimal':
+        results = []
+        for user in all_user_preferences:
+            for day in range(1, days_in_month + 1):
+                if pl.value(shifts[(user.username, day)]) == 1:
+                    results.append({'username': user.username, 'date': f"{year}-{month:02d}-{day:02d}", 'color': user_colors[user.username]})
+        return jsonify({'status': 'success', 'schedule': results})
+    else:
+        return jsonify({'status': 'failure', 'message': 'Infeasible solution', 'violated_constraints': [c.name for c in prob.constraints.values() if c.pi > 0]})
+
+def generate_distinct_colors(n):
+    import colorsys
+    colors = []
+    step = 360 / n  # Divide the color wheel into n parts
+    for i in range(n):
+        hue = i * step
+        rgb = colorsys.hsv_to_rgb(hue/360, 1.0, 1.0)  # Saturation & Lightness at max for vivid colors
+        hex_color = "#{:02x}{:02x}{:02x}".format(int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
+        colors.append(hex_color)
+    return colors

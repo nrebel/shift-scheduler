@@ -1,123 +1,77 @@
 {% extends "base.html" %}
 
-{% block title %}Shift Preferences{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <h1>Shift Preferences</h1>
-    <form method="post" id="preferencesForm">
-        {{ form.hidden_tag() }}
+<div class="container">
+    <h2>Schedule Planning</h2>
+    <form id="scheduleForm">
         <div class="form-group">
-            {{ form.min_shifts.label(class="form-label") }}
-            {{ form.min_shifts(class="form-control", id="min_shifts") }}
-        </div>
-        <div class="form-group">
-            {{ form.max_shifts.label(class="form-label") }}
-            {{ form.max_shifts(class="form-control", id="max_shifts") }}
-        </div>
-        <div class="form-group">
-            {{ form.month.label(class="form-label") }}
-            {{ form.month(class="form-control", id="month") }}
+            <label for="yearSelect">Select Year:</label>
+            <select class="form-control" id="yearSelect" name="year">
+                {% for year in range(2023, 2025) %}
+                <option value="{{ year }}" default="2024">{{ year }}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="form-group">
-            {{ form.year.label(class="form-label") }}
-            {{ form.year(class="form-control", id="year") }}
+            <label for="monthSelect">Select Month:</label>
+            <select class="form-control" id="monthSelect" name="month">
+                {% for month in range(1, 13) %}
+                <option value="{{ month }}">{{ month }}</option>
+                {% endfor %}
+            </select>
         </div>
-        
-        <!-- Hidden input for capturing selected dates -->
-        <input type="hidden" id="selectedDates" name="selected_days" value="{{ form.selected_days.data }}">
-        <div>
-            {{ form.submit(class="btn btn-primary") }}
-        </div>
+        <button type="button" id="generateSchedule" class="btn btn-primary">Generate Schedule</button>
     </form>
     <div id="calendar"></div>
+    <div id="errorMessages"></div>
 </div>
-
-
 <link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/core/main.min.css' rel='stylesheet' />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/daygrid/main.min.css' rel='stylesheet' />
 <script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/core/main.min.js'></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/interaction/main.min.js'></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/daygrid/main.min.js'></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script> 
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
-    var selectedDates = [];
-
-    // Access min_shifts and max_shifts values from the form
-    var minShifts = parseInt(document.getElementById('min_shifts').value, 0);
-    var maxShifts = parseInt(document.getElementById('max_shifts').value, 30);
-
     var calendar = new FullCalendar.Calendar(calendarEl, {
-        plugins: ['interaction', 'dayGrid'],
-        selectable: true,
-        selectMirror: true,
-        unselectAuto: false,
-        select: function(info) {
-            var startDate = info.startStr;
-            var alreadySelected = selectedDates.includes(startDate);
-            var newSelectionCount = alreadySelected ? selectedDates.length - 1 : selectedDates.length + 1;
-
-            if (alreadySelected) {
-                selectedDates = selectedDates.filter(date => date !== startDate);
-                info.view.calendar.getEventById(startDate)?.remove();
-            } else {
-                selectedDates.push(startDate);
-                info.view.calendar.addEvent({
-                    id: startDate,
-                    start: startDate,
-                    allDay: true,
-                    rendering: 'background',
-                    backgroundColor: '#ff9f89'
-                });
-            }
-            document.getElementById('selectedDates').value = selectedDates.join(',');
-        },
-        initialView: 'dayGridMonth',
+        plugins: ['dayGrid'],
+        initialView: 'dayGridMonth'
     });
-
     calendar.render();
-    
-    function updateCalendarMonth() {
-        var selectedMonth = document.getElementById('month').value - 1;
-        var date = new Date();
-        date.setMonth(selectedMonth);
-        date.setDate(1); // Ensure we're at the start of the month
-        calendar.gotoDate(date);
-    }
-    
-    document.getElementById('month').addEventListener('change', updateCalendarMonth);
-    updateCalendarMonth(); // Update on initial load
 
-    document.getElementById('min_shifts').addEventListener('change', function() {
-        minShifts = parseInt(this.value, 10);
-    });
-    document.getElementById('max_shifts').addEventListener('change', function() {
-        maxShifts = parseInt(this.value, 10);
-    });
+    $('#generateSchedule').on('click', function() {
+        var year = $('#yearSelect').val();
+        var month = $('#monthSelect').val();
 
-    document.getElementById('preferencesForm').addEventListener('submit', function(e) {
-        if (selectedDates.length < minShifts) {
-            e.preventDefault();
-            alert(`Please select a number of at least ${minShifts} days.`);   
-        }
-        var value = document.getElementById('selectedDates').value; 
-        $.ajax({ 
-                url: '/updatepreferences', 
-                type: 'POST', 
-                contentType: 'application/json', 
-                data: JSON.stringify({'data': value}), 
-                success: function(response) { 
-                    document.getElementById('selectedDates').innerHTML = response.result; 
-                }, 
-                error: function(error) { 
-                    console.log(error); 
-                } 
-            }); 
+        calendar.gotoDate(new Date(year, month - 1, 1));  // Adjusts the calendar view
+
+        $.ajax({
+            url: "{{ url_for('generate_schedule') }}",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ year: year, month: month }),
+            success: function(data) {
+                if(data.status === "success") {
+                    calendar.removeAllEvents();
+                    data.schedule.forEach(function(item) {
+                        calendar.addEvent({
+                            title: item.username,
+                            start: item.date,
+                            allDay: true,
+                            backgroundColor: item.color,
+                            borderColor: item.color
+                        });
+                    });
+                } else {
+                    $('#errorMessages').html(data.message);  // Show error messages
+                }
+            },
+            error: function(xhr) {
+                alert('Error: ' + xhr.responseText);
+            }
+        });
     });
 });
 </script>
-
 {% endblock %}
