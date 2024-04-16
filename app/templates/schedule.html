@@ -5,30 +5,34 @@
 {% block content %}
 <div class="container mt-4">
     <h1>Shift Preferences</h1>
-    <p>Select your available days:</p>
-
-    <div id="calendar"></div>
-    <form id="preferencesForm" action="{{ url_for('update_preferences') }}" method="post">
-        <input type="hidden" id="selectedDates" name="selectedDates">
+    <form method="post" id="preferencesForm">
+        {{ form.hidden_tag() }}
         <div class="form-group">
-            <label for="month">Month</label>
-            <select class="form-control" id="month" name="month">
-                {% for m in range(1, 13) %}
-                <option value="{{ m }}">{{ m }}</option>
-                {% endfor %}
-            </select>
+            {{ form.min_shifts.label(class="form-label") }}
+            {{ form.min_shifts(class="form-control", id="min_shifts") }}
         </div>
         <div class="form-group">
-            <label for="min_shifts">Minimum Shifts</label>
-            <input type="number" class="form-control" id="min_shifts" name="min_shifts" required>
+            {{ form.max_shifts.label(class="form-label") }}
+            {{ form.max_shifts(class="form-control", id="max_shifts") }}
         </div>
         <div class="form-group">
-            <label for="max_shifts">Maximum Shifts</label>
-            <input type="number" class="form-control" id="max_shifts" name="max_shifts" required>
+            {{ form.month.label(class="form-label") }}
+            {{ form.month(class="form-control", id="month") }}
         </div>
-        <button type="submit" class="btn btn-primary">Save Preferences</button>
+        <div class="form-group">
+            {{ form.year.label(class="form-label") }}
+            {{ form.year(class="form-control", id="year") }}
+        </div>
+        
+        <!-- Hidden input for capturing selected dates -->
+        <input type="hidden" id="selectedDates" name="selected_days" value="{{ form.selected_days.data }}">
+        <div>
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
     </form>
+    <div id="calendar"></div>
 </div>
+
 
 <link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/core/main.min.css' rel='stylesheet' />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/4.2.0/daygrid/main.min.css' rel='stylesheet' />
@@ -41,6 +45,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     var selectedDates = [];
+
+    // Access min_shifts and max_shifts values from the form
+    var minShifts = parseInt(document.getElementById('min_shifts').value, 0);
+    var maxShifts = parseInt(document.getElementById('max_shifts').value, 30);
 
     var calendar = new FullCalendar.Calendar(calendarEl, {
         plugins: ['interaction', 'dayGrid'],
@@ -93,11 +101,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('preferencesForm').addEventListener('submit', function(e) {
         if (selectedDates.length < minShifts) {
             e.preventDefault();
-            alert(`Please select at least ${minShifts} days.`);
+            alert(`Please select a number of at least ${minShifts} days.`);   
         }
         var value = document.getElementById('selectedDates').value; 
         $.ajax({ 
-                url: '/update_preferences', 
+                url: '/updatepreferences', 
                 type: 'POST', 
                 contentType: 'application/json', 
                 data: JSON.stringify({'data': value}), 

@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
-from wtforms.validators import DataRequired, ValidationError, EqualTo
+from wtforms import SelectField, BooleanField, StringField, PasswordField, SubmitField, IntegerField, SelectMultipleField, widgets, HiddenField
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from .models import User
+import datetime  # Ensure you have this import
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -20,3 +21,11 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(username=username.data).first()
         if user is not None:
             raise ValidationError('Please use a different username.')
+
+class ShiftPreferenceForm(FlaskForm):
+    min_shifts = IntegerField('Minimum Shifts', validators=[DataRequired(), NumberRange(min=0, max=31)],default=0)
+    max_shifts = IntegerField('Maximum Shifts', validators=[DataRequired(), NumberRange(min=0, max=31)],default=5)
+    month = IntegerField('Month', validators=[DataRequired()], default=datetime.datetime.now().month)
+    year = IntegerField('Year', validators=[DataRequired()], default=datetime.datetime.now().year)
+    selected_days = HiddenField('selectedDates')  # Captures the comma-separated list of selected dates
+    submit = SubmitField('Submit Preferences')
