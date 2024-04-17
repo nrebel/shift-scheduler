@@ -88,7 +88,7 @@ def update_preferences():
     month = datetime.now().month
     num_days = (datetime(year, month % 12 + 1, 1) - datetime(year, month, 1)).days
 
-    print("data: {data}, selected_dates: {selected_dates}, year: {year}, month: {month}.")
+    print(f"data: {data}, selected_dates: {selected_dates}, year: {year}, month: {month}.")
     ShiftModel = get_shift_model(year, month)
     existing_entry = ShiftModel.query.filter_by(username=current_user.username, year=year, month=month).first()
 
