@@ -1,5 +1,6 @@
 from flask import render_template, redirect, session, url_for, flash, request, jsonify, session
-from flask_login import current_user, login_user, logout_user, login_required
+from flask_login import LoginManager, current_user, login_user, logout_user, login_required
+
 from urllib.parse import urlparse
 import pulp as pl
 
@@ -301,3 +302,27 @@ def generate_distinct_colors(n):
         hex_color = "#{:02x}{:02x}{:02x}".format(int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
         colors.append(hex_color)
     return colors
+
+@app.route('/load_user_preferences', methods=['GET'])
+@login_required
+def load_user_preferences():
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
+    user_name = session["user"]  # Assuming you are using Flask-Login for user session management
+
+    ShiftModel = get_shift_model(year, month)
+    user_prefs = ShiftModel.query.filter_by(username=user_name).first()
+
+    if user_prefs:
+        dates = [f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)}"
+                 for day in range(1, monthrange(year, month)[1] + 1)
+                 if getattr(user_prefs, f'day_{day}', False)]
+        min_shifts = user_prefs.min_shifts
+        max_shifts = user_prefs.max_shifts
+    else:
+        dates = []
+        min_shifts = 0
+        max_shifts = 0
+
+    return jsonify({'dates': dates, 'min_shifts': min_shifts, 'max_shifts': max_shifts})
+
