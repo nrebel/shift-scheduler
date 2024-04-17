@@ -82,9 +82,10 @@ def schedule():
 @login_required
 def update_preferences():
     data = request.get_json(force=True)  # ensures JSON format even if header is not set
-    selected_dates = data['data'].split(',')
-    year = datetime.datetime.now().year
-    month = datetime.datetime.now().month
+    print(f"data['dates']: {data['dates']}")
+    selected_dates = data['dates']#.split(',')
+    year = datetime.now().year
+    month = datetime.now().month
     num_days = (datetime(year, month % 12 + 1, 1) - datetime(year, month, 1)).days
 
     print("data: {data}, selected_dates: {selected_dates}, year: {year}, month: {month}.")
