@@ -60,6 +60,8 @@ def register():
 @app.route('/schedule', methods=['GET', 'POST'])
 @login_required
 def schedule():
+    selected_year = datetime.now().year
+    selected_month = datetime.now().month
     if request.method == 'POST':
         # Try to parse the JSON data sent from the client
         try:
@@ -83,9 +85,11 @@ def schedule():
 def update_preferences():
     data = request.get_json(force=True)  # ensures JSON format even if header is not set
     print(f"data['dates']: {data['dates']}")
-    selected_dates = data['dates']#.split(',')
-    year = datetime.now().year
-    month = datetime.now().month
+    selected_dates = data['dates'] # .split(',')
+    year = data['year']
+    month = data['month']
+    minshifts = data['minShifts']
+    maxshifts = data['maxShifts']
     num_days = (datetime(year, month % 12 + 1, 1) - datetime(year, month, 1)).days
 
     print(f"data: {data}, selected_dates: {selected_dates}, year: {year}, month: {month}.")
@@ -104,9 +108,13 @@ def update_preferences():
 
     # Set selected days
     for day in selected_dates:
+        print(f"[dbg] day: {day}")
         if day:
             day_num = int(day.split('-')[-1])  # extracting day from 'YYYY-MM-DD'
             setattr(new_entry, f'day_{day_num}', True)
+
+    setattr(new_entry, 'min_shifts', minshifts)
+    setattr(new_entry, 'max_shifts', maxshifts)
 
     db.session.commit()
     return jsonify(success=True, message="Preferences successfully updated!")
@@ -178,7 +186,7 @@ def view_schedule():
                            selected_year=selected_year,
                            selected_month=selected_month)
 
-@app.route('/fetch_user_schedule', methods=['POST'])
+@app.route('/fetch_user_schedule', methods=['POST', 'GET'])
 @login_required
 def fetch_user_schedule():
     try:
@@ -201,8 +209,8 @@ def fetch_user_schedule():
             for day in range(1, 32):  # Handling up to 31 days
                 if getattr(user_shifts, f'day_{day}', False):
                     days.append(f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)}")
-            
-        print(f"days: {days}.")
+
+        print(f"dates: {days}.")
 
         return jsonify({'dates': days})
     except Exception as e:
@@ -232,6 +240,8 @@ def fetch_all_users_schedules():
 @app.route('/generate_schedule', methods=['POST'])
 @login_required
 def generate_schedule():
+    current_year = datetime.now().year
+    current_month = datetime.now().month
     data = request.get_json()
     year = int(data['year'])
     month = int(data['month'])

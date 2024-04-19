@@ -4,11 +4,11 @@
 <div class="container">
     <h2>Schedule Planning</h2>
     <form id="scheduleForm">
-        <div class="form-group">
+        <!-- <div class="form-group">
             <label for="yearSelect">Select Year:</label>
-            <select class="form-control" id="yearSelect" name="year">
-                {% for year in range(2023, 2025) %}
-                <option value="{{ year }}" default="2024">{{ year }}</option>
+            <select class="form-control" id="yearSelect" name="year" default="2024">
+                {% for year in range(2023, 2026) %}
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
                 {% endfor %}
             </select>
         </div>
@@ -16,10 +16,10 @@
             <label for="monthSelect">Select Month:</label>
             <select class="form-control" id="monthSelect" name="month">
                 {% for month in range(1, 13) %}
-                <option value="{{ month }}">{{ month }}</option>
+                <option value="{{ month }}" {% if month == selected_month %}selected{% endif %}>{{ month }}</option>
                 {% endfor %}
             </select>
-        </div>
+        </div> -->
         <button type="button" id="generateSchedule" class="btn btn-primary">Generate Schedule</button>
     </form>
     <div id="calendar"></div>
@@ -41,11 +41,12 @@
     calendar.render();
 
     $('#generateSchedule').on('click', function() {
-        var year = $('#yearSelect').val();
-        var month = $('#monthSelect').val();
+        var currentDate = calendar.getDate(); // Get the current date of the calendar
+        var year = currentDate.getFullYear(); // Extract the year from the current date
+        var month = currentDate.getMonth() + 1; // Extract the month from the current date (getMonth() is zero-indexed so add 1)
 
-        calendar.gotoDate(new Date(year, month - 1, 1));  // Adjusts the calendar view
-
+        calendar.gotoDate(new Date(year, month - 1, 1));
+        
         $.ajax({
             url: "{{ url_for('generate_schedule') }}",
             type: "POST",
