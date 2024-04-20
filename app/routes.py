@@ -137,29 +137,6 @@ def preferences():
         return redirect(url_for('preferences'))
     return render_template('preferences.html', title='Shift Preferences', form=form)
 
-def get_days_for_shift(json_data):
-    # Initialize the list to hold day numbers
-    day_numbers = []
-
-    # Extract the date string from JSON data and split into list
-    selected_days_str = json_data['data']
-    selected_dates = selected_days_str.split(',')
-
-    # Process the first date outside the loop to get the common year and month
-    if selected_dates:
-        first_date = datetime.strptime(selected_dates[0], '%Y-%m-%d')
-        year = first_date.year
-        month = first_date.month
-
-        # Now process all dates to extract day numbers
-        for date_str in selected_dates:
-            day = datetime.strptime(date_str, '%Y-%m-%d').day
-            day_numbers.append(day)
-
-        return year, month, day_numbers
-    else:
-        return None, None, []  # Return None types if the list is empty
-    
 @app.route('/view_schedule', methods=['GET', 'POST'])
 @login_required
 def view_schedule():
