@@ -213,6 +213,29 @@ def fetch_all_users_schedules():
 
     return jsonify(results)
 
+@app.route('/profile')  # GET is default, no need to specify if only GET is used
+@login_required
+def profile():
+    return render_template('profile.html')
+
+@app.route('/update_color', methods=['POST'])
+@login_required
+def update_color():
+    new_color = request.form.get('color')
+    if new_color:
+        # Check if another user has already chosen this color
+        existing_user = User.query.filter(User.color == new_color, User.id != current_user.id).first()
+        if existing_user:
+            flash('This color is already taken. Please choose another one.', 'danger')
+        else:
+            current_user.color = new_color
+            db.session.commit()
+            flash('Your favorite color has been updated!', 'success')
+    else:
+        flash('Invalid color. Please choose a valid color.', 'danger')
+
+    return redirect(url_for('profile'))
+
 
 @app.route('/generate_schedule', methods=['POST'])
 @login_required

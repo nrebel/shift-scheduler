@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}
+Profile
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="text-center">Profile Settings</h3>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form method="POST" action="{{ url_for('update_color') }}">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" class="form-control" id="username" value="{{ current_user.username }}" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="color">Favorite Color</label>
+                        <input type="color" class="form-control" id="color" name="color" value="{{ current_user.color | default('#000000') }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Color</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
