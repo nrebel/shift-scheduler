@@ -314,17 +314,6 @@ def generate_schedule():
     else:
         return jsonify({'status': 'failure', 'message': 'Infeasible solution', 'violated_constraints': [c.name for c in prob.constraints.values() if c.pi > 0]})
 
-def generate_distinct_colors(n):
-    import colorsys
-    colors = []
-    step = 360 / n  # Divide the color wheel into n parts
-    for i in range(n):
-        hue = i * step
-        rgb = colorsys.hsv_to_rgb(hue/360, 1.0, 1.0)  # Saturation & Lightness at max for vivid colors
-        hex_color = "#{:02x}{:02x}{:02x}".format(int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
-        colors.append(hex_color)
-    return colors
-
 @app.route('/load_user_preferences', methods=['GET'])
 @login_required
 def load_user_preferences():
