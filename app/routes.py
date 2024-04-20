@@ -218,9 +218,12 @@ def fetch_user_schedule():
         user = User.query.filter_by(username=user_name).one()
         color = user.color
 
-        print(f"dates: {days}. color: {color}.")
+        minshifts = getattr(user_shifts, 'min_shifts')
+        maxshifts = getattr(user_shifts, 'max_shifts')
 
-        return jsonify({'dates': days, 'color': color})
+        print(f"dates: {days}. color: {color}. minshifts: {minshifts}. maxshifts: {maxshifts}.")
+
+        return jsonify({'dates': days, 'color': color, 'minshifts': minshifts, 'maxshifts': maxshifts})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
