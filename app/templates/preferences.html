@@ -19,8 +19,9 @@
         <input type="hidden" id="selectedDates" name="selected_days">
         <button type="submit" class="btn btn-primary" name="save" onclick="savePreferences()">Save Preferences</button>
     </form>
+    <button id="selectAllButton" class="btn btn-info" name="selectAllButton" onclick="selectAllVisibleDays()">Select All Days</button>
+    <button id="deselectAllButton" class="btn btn-info" name="deselectAllButton" onclick="deselectAllVisibleDays()">Clear All Days</button>
     <div id="calendar"></div>
-    <button id="selectAllButton" class="btn btn-primary" name="selectAllButton" onclick="selectAllVisibleDays()">Select All Days</button>
 </div>
 <link href='https://unpkg.com/fullcalendar@5/main.min.css' rel='stylesheet' />
 <script src='https://unpkg.com/fullcalendar@5/main.min.js'></script>
@@ -79,6 +80,10 @@
             selectAllVisibleDays();
         });
 
+        deselectAllButton.addEventListener("click", function() {
+            deselectAllVisibleDays();
+        });
+        
         function fetchSelectedDays(year, month) {
             axios.post('/fetch_user_schedule', {
                 user: '{{ current_user.username }}', // Replace 'username' with the actual username or manage dynamically
@@ -103,6 +108,11 @@
             });
         }
 
+        function deselectAllVisibleDays() {
+            calendar.removeAllEvents();
+            selectedDates = [];
+        } 
+
         function selectAllVisibleDays() {
             var view = calendar.view;
             var dates = view.currentStart;
@@ -122,6 +132,30 @@
                 dates.setDate(dates.getDate() + 1);
             }
         }
+
+        function deselectAllVisibleDays() {
+            var view = calendar.view;
+            var dates = new Date(view.currentStart);
+            while (dates < view.currentEnd) {
+                var dateStr = new Date(dates).toISOString().split('T')[0];
+                var event = calendar.getEventById(dateStr);
+                if (event) {
+                    event.remove();
+                    selectedDates = selectedDates.filter(d => d !== dateStr);
+                }
+                dates.setDate(dates.getDate() + 1);
+            }
+            selectedDatesInput.value = selectedDates.join(',');
+        }
+
+        window.toggleSelectionOfAllDays = function() {
+            if (toggle) {
+                selectAllVisibleDays();
+            } else {
+                deselectAllVisibleDays();
+            }
+            toggle = !toggle; // Invert the value of toggle after operation
+        };
 
         window.savePreferences = function() {
 
