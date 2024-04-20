@@ -281,26 +281,4 @@ def generate_schedule():
     else:
         return jsonify({'status': 'failure', 'message': 'Infeasible solution', 'violated_constraints': [c.name for c in prob.constraints.values() if c.pi > 0]})
 
-@app.route('/load_user_preferences', methods=['GET'])
-@login_required
-def load_user_preferences():
-    year = request.args.get('year', type=int)
-    month = request.args.get('month', type=int)
-    user_name = session["user"]  # Assuming you are using Flask-Login for user session management
-
-    ShiftModel = get_shift_model(year, month)
-    user_prefs = ShiftModel.query.filter_by(username=user_name).first()
-
-    if user_prefs:
-        dates = [f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)}"
-                 for day in range(1, monthrange(year, month)[1] + 1)
-                 if getattr(user_prefs, f'day_{day}', False)]
-        min_shifts = user_prefs.min_shifts
-        max_shifts = user_prefs.max_shifts
-    else:
-        dates = []
-        min_shifts = 0
-        max_shifts = 0
-
-    return jsonify({'dates': dates, 'min_shifts': min_shifts, 'max_shifts': max_shifts})
 
