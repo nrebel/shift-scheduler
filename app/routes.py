@@ -137,19 +137,6 @@ def preferences():
         return redirect(url_for('preferences'))
     return render_template('preferences.html', title='Shift Preferences', form=form)
 
-@app.route("/updatepreferences", methods=['POST'])
-@login_required
-def updatepreferences():
-    data = request.get_json()
-    print("data days: ", data)
-    print("user: ", session["user"])
-    year, month, shift_days = get_days_for_shift(data)
-    minshifts = data['minshifts']
-    maxshifts = data['maxshifts']
-    base_table = get_shift_model(year, month)
-    initialize_shift_table(base_table, session["user"], year=year, month=month, true_days=shift_days, minshifts=minshifts, maxshifts=maxshifts)
-    return render_template('updatepreferences.html', title='View Shift Preferences', data=data)
-
 def get_days_for_shift(json_data):
     # Initialize the list to hold day numbers
     day_numbers = []
