@@ -49,12 +49,17 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(username=form.username.data)
+        user = User(username=form.username.data, color=form.color.data)
         user.set_password(form.password.data)
         db.session.add(user)
-        db.session.commit()
-        flash('Congratulations, you are now a registered user!')
-        return redirect(url_for('login'))
+        try:
+            db.session.commit()
+            flash('Congratulations, you are now a registered user!')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('This color is already in use. Please choose a different one.', 'error')
+            return redirect(url_for('register'))
     return render_template('register.html', title='Register', form=form)
 
 @app.route('/schedule', methods=['GET', 'POST'])
@@ -209,10 +214,13 @@ def fetch_user_schedule():
             for day in range(1, 32):  # Handling up to 31 days
                 if getattr(user_shifts, f'day_{day}', False):
                     days.append(f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)}")
+        
+        user = User.query.filter_by(username=user_name).one()
+        color = user.color
 
-        print(f"dates: {days}.")
+        print(f"dates: {days}. color: {color}.")
 
-        return jsonify({'dates': days})
+        return jsonify({'dates': days, 'color': color})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -232,7 +240,9 @@ def fetch_all_users_schedules():
                  for i in range(1, 32)
                  if getattr(user_shifts, f'day_{i}', False)]
         if dates:
-            results.append({'username': user_shifts.username, 'dates': dates})
+            user = User.query.filter_by(username=user_shifts.username).one()
+            color = user.color
+            results.append({'username': user_shifts.username, 'dates': dates, 'color': color})
 
     return jsonify(results)
 
@@ -255,8 +265,9 @@ def generate_schedule():
     num_users = len(all_user_preferences)
 
     # Generate distinct colors
-    colors = generate_distinct_colors(num_users)
-    user_colors = {user.username: colors[i % num_users] for i, user in enumerate(all_user_preferences)}
+    #colors = generate_distinct_colors(num_users)
+    user_colors = {user.username: User.query.filter_by(username=user.username).one().color for user in all_user_preferences}
+    print(f"user_colors: ", user_colors)
 
     # Problem setup
     prob = pl.LpProblem("Shift_Scheduling", pl.LpMinimize)

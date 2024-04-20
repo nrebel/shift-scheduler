@@ -13,6 +13,7 @@ class User(UserMixin, db.Model):
     id = Column(Integer, primary_key=True)
     username = Column(String(100), unique=True, nullable=False)
     password_hash = Column(String(200))
+    color = Column(String(50), unique=True)  # Added field for color
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
