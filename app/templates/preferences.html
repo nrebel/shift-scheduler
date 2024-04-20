@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Shift Preferences{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h1>Enter Shift Preferences</h1>
+    <form method="post" id="preferencesForm">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.min_shifts.label(class="form-label") }}
+            {{ form.min_shifts(class="form-control", id="minShifts") }}
+        </div>
+        <div class="form-group">
+            {{ form.max_shifts.label(class="form-label") }}
+            {{ form.max_shifts(class="form-control", id="maxShifts") }}
+        </div>
+        <input type="hidden" id="selectedDates" name="selected_days">
+        <button type="submit" class="btn btn-primary" name="save" onclick="savePreferences()">Save Preferences</button>
+    </form>
+    <div id="calendar"></div>
+    <button id="selectAllButton" class="btn btn-primary" name="selectAllButton" onclick="selectAllVisibleDays()">Select All Days</button>
+</div>
+<link href='https://unpkg.com/fullcalendar@5/main.min.css' rel='stylesheet' />
+<script src='https://unpkg.com/fullcalendar@5/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js'></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            showNonCurrentDates: false,
+            selectable: true,
+            unselectAuto: false,
+            dayMaxEvents: true, // allow "more" link when too many events
+            datesSet: function(dateInfo) {
+                // Clear previous events
+                calendar.getEvents().forEach(event => event.remove());
+                // Fetch new events for the current month
+                fetchSelectedDays(dateInfo.start.getFullYear(), dateInfo.start.getMonth()); // +1 because FullCalendar is 0 indexed for months
+            },
+            dateClick: function(info) {
+                // Adjusting to create the date at noon to avoid timezone issues
+                var date = new Date(info.dateStr + 'T12:00:00'); // Append 'T12:00:00' to set time to noon
+                var dateStr = date.toISOString().split('T')[0]; // Converts back to YYYY-MM-DD format
+                var dateCell = calendar.getEventById(dateStr);
+                if(dateCell) {
+                    // If event exists, remove it
+                    dateCell.remove();
+                    selectedDates = selectedDates.filter(d => d !== dateStr);
+                } else {
+                    // Otherwise, add a new event to the calendar at the clicked date
+                    calendar.addEvent({
+                        id: dateStr,
+                        title: 'Selected',
+                        start: date,
+                        allDay: true,
+                        backgroundColor: '{{ current_user.color }}', // Blue color for selection
+                        borderColor: '{{ current_user.color }}'
+                    });
+                    selectedDates.push(dateStr);
+                }
+            },
+            events: [
+                // Initially marked dates can be dynamically loaded here if needed
+            ],
+            eventClick: function(info) {
+                info.event.remove(); // Remove event on click
+                selectedDates = selectedDates.filter(d => d !== info.event.id);
+            }
+        });
+
+        var selectedDates = []; // To hold the dates in 'YYYY-MM-DD' format
+
+        calendar.render();
+        
+        selectAllButton.addEventListener("click", function() {
+            selectAllVisibleDays();
+        });
+
+        function fetchSelectedDays(year, month) {
+            axios.post('/fetch_user_schedule', {
+                user: '{{ current_user.username }}', // Replace 'username' with the actual username or manage dynamically
+                year: year,
+                month: month + 1
+            }).then(function(response) {
+                document.getElementById('minShifts').value = response.data.minshifts;
+                document.getElementById('maxShifts').value = response.data.maxshifts;;
+                response.data.dates.forEach(function(dateStr) {                
+                    calendar.addEvent({
+                        id: dateStr,
+                        title: 'Selected',
+                        start: dateStr,
+                        allDay: true,
+                        backgroundColor: '{{ current_user.color }}',
+                        borderColor: '{{ current_user.color }}'
+                    }),
+                    selectedDates.push(dateStr);
+                });
+            }).catch(function(error) {
+                //console.error('Failed to fetch selected days:', error);
+            });
+        }
+
+        function selectAllVisibleDays() {
+            var view = calendar.view;
+            var dates = view.currentStart;
+            while (dates <= view.currentEnd) {
+                var dateStr = new Date(dates).toISOString().split('T')[0];
+                if (!calendar.getEventById(dateStr)) { // check if the day is not already selected
+                    calendar.addEvent({
+                        id: dateStr,
+                        title: 'Selected',
+                        start: dateStr,
+                        allDay: true,
+                        backgroundColor: '{{ current_user.color }}',
+                        borderColor: '{{ current_user.color }}'
+                    }),
+                    selectedDates.push(dateStr);
+                }
+                //dates.setDate(dates.getDate() + 1);
+            }
+        }
+
+        window.savePreferences = function() {
+
+            var minShifts = document.getElementById('minShifts').value;
+            var maxShifts = document.getElementById('maxShifts').value;
+
+            var currentMonth = calendar.getDate().getMonth();
+            var monthDates = selectedDates.filter(date => new Date(date).getMonth() === currentMonth);
+
+            axios.post('/update_preferences', {
+                dates: monthDates,
+                year: new Date().getFullYear(),
+                month: currentMonth + 1,
+                minShifts: minShifts,
+                maxShifts: maxShifts
+            })
+            .then(function(response) {
+                alert('Preferences saved successfully!');
+            })
+            .catch(function(error) {
+                console.error('Error saving preferences:', error);
+                //alert('Failed to save preferences!');
+            });
+        };
+    });
+</script>
+{% endblock %}
+
