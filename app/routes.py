@@ -209,7 +209,9 @@ def fetch_all_users_schedules():
         if dates:
             user = User.query.filter_by(username=user_shifts.username).one()
             color = user.color
-            results.append({'username': user_shifts.username, 'dates': dates, 'color': color})
+            minshifts = getattr(user_shifts, 'min_shifts')
+            maxshifts = getattr(user_shifts, 'max_shifts')
+            results.append({'username': user_shifts.username, 'dates': dates, 'color': color, 'minshifts': minshifts, 'maxshifts': maxshifts})
 
     return jsonify(results)
 

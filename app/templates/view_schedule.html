@@ -95,7 +95,7 @@
                 data.forEach(function(user) {
                     user.dates.forEach(function(date) {
                         calendar.addEvent({
-                            title: user.username,
+                            title: user.username + '[' + user.minshifts + ',' + user.maxshifts + ']',
                             start: date,
                             allDay: true,
                             backgroundColor: user.color,
