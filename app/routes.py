@@ -1,5 +1,5 @@
-from flask import render_template, redirect, session, url_for, flash, request, jsonify, session
-from flask_login import LoginManager, current_user, login_user, logout_user, login_required
+from flask import render_template, redirect, url_for, flash, request, jsonify, session
+from flask_login import current_user, login_user, logout_user, login_required
 
 from urllib.parse import urlparse
 import pulp as pl
@@ -8,10 +8,8 @@ from . import app, db
 from .models import User, get_shift_model, initialize_shift_table
 from .forms import LoginForm, RegistrationForm, ShiftPreferenceForm
 from datetime import datetime
-import json
 
 from calendar import monthrange
-from sqlalchemy import inspect
 
 @app.route('/')
 @app.route('/index')
@@ -56,7 +54,7 @@ def register():
             db.session.commit()
             flash('Congratulations, you are now a registered user!')
             return redirect(url_for('login'))
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             flash('This color is already in use. Please choose a different one.', 'error')
             return redirect(url_for('register'))
@@ -259,7 +257,7 @@ def generate_schedule():
     # Generate distinct colors
     #colors = generate_distinct_colors(num_users)
     user_colors = {user.username: User.query.filter_by(username=user.username).one().color for user in all_user_preferences}
-    print(f"user_colors: ", user_colors)
+    print("user_colors: ", user_colors)
 
     # Problem setup
     prob = pl.LpProblem("Shift_Scheduling", pl.LpMinimize)

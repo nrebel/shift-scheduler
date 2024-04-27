@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, BooleanField, StringField, PasswordField, SubmitField, IntegerField, SelectMultipleField, widgets, HiddenField
-from wtforms.validators import  DataRequired, Length, EqualTo, ValidationError, NumberRange
+from wtforms import BooleanField, StringField, PasswordField, SubmitField, IntegerField, HiddenField
+from wtforms.validators import  DataRequired, EqualTo, ValidationError, NumberRange
 from wtforms.fields import ColorField  # Import ColorField for HTML5 color input
 
 from .models import User
