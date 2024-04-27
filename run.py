@@ -1,5 +1,4 @@
 from app import app, db
-from app.models import User, get_shift_model
 from flask_migrate import Migrate
 import os
 
