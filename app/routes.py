@@ -181,8 +181,8 @@ def fetch_user_schedule():
         
         all_user_preferences = ShiftModel.query.all()
 
-        min_shifts = getattr(user_shifts, 'min_shifts')
-        max_shifts = getattr(user_shifts, 'max_shifts')
+        min_shifts = getattr(user_shifts, 'min_shifts', 0)
+        max_shifts = getattr(user_shifts, 'max_shifts', 31)
 
         print(f"dates: {days}. color: {color}. min_shifts: {min_shifts}. max_shifts: {max_shifts}.")
 
