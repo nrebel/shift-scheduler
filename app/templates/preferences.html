@@ -76,13 +76,16 @@
 
         calendar.render();
         
-        selectAllButton.addEventListener("click", function() {
+        document.getElementById('selectAllButton').addEventListener('click', selectAllVisibleDays);
+        document.getElementById('deselectAllButton').addEventListener('click', deselectAllVisibleDays);
+
+       /* selectAllButton.addEventListener("click", function() {
             selectAllVisibleDays();
         });
 
         deselectAllButton.addEventListener("click", function() {
             deselectAllVisibleDays();
-        });
+        });*/
         
         function fetchSelectedDays(year, month) {
             axios.post('/fetch_user_schedule', {

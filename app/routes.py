@@ -1,6 +1,5 @@
 from flask import render_template, redirect, url_for, flash, request, jsonify, session
 from flask_login import current_user, login_user, logout_user, login_required
-
 from urllib.parse import urlparse
 import pulp as pl
 
@@ -179,13 +178,15 @@ def fetch_user_schedule():
         
         user = User.query.filter_by(username=user_name).one()
         color = user.color
+        
+        all_user_preferences = ShiftModel.query.all()
 
-        minshifts = getattr(user_shifts, 'min_shifts')
-        maxshifts = getattr(user_shifts, 'max_shifts')
+        min_shifts = getattr(user_shifts, 'min_shifts')
+        max_shifts = getattr(user_shifts, 'max_shifts')
 
-        print(f"dates: {days}. color: {color}. minshifts: {minshifts}. maxshifts: {maxshifts}.")
+        print(f"dates: {days}. color: {color}. min_shifts: {min_shifts}. max_shifts: {max_shifts}.")
 
-        return jsonify({'dates': days, 'color': color, 'minshifts': minshifts, 'maxshifts': maxshifts})
+        return jsonify({'dates': days, 'color': color, 'minshifts': min_shifts, 'maxshifts': max_shifts})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -304,5 +305,3 @@ def generate_schedule():
         return jsonify({'status': 'success', 'schedule': results})
     else:
         return jsonify({'status': 'failure', 'message': 'Infeasible solution', 'violated_constraints': [c.name for c in prob.constraints.values() if c.pi > 0]})
-
-
