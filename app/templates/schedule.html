@@ -4,22 +4,6 @@
 <div class="container">
     <h2>Schedule Planning</h2>
     <form id="scheduleForm">
-        <!-- <div class="form-group">
-            <label for="yearSelect">Select Year:</label>
-            <select class="form-control" id="yearSelect" name="year" default="2024">
-                {% for year in range(2023, 2026) %}
-                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="monthSelect">Select Month:</label>
-            <select class="form-control" id="monthSelect" name="month">
-                {% for month in range(1, 13) %}
-                <option value="{{ month }}" {% if month == selected_month %}selected{% endif %}>{{ month }}</option>
-                {% endfor %}
-            </select>
-        </div> -->
         <button type="button" id="generateSchedule" class="btn btn-primary">Generate Schedule</button>
     </form>
     <div id="calendar"></div>
