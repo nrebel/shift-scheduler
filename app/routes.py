@@ -289,9 +289,6 @@ def generate_schedule():
         for day in unavailable_days:
             prob += shifts[(user.username, day)] == 0, f"Shift_not_possible_{user.username}_{day}"
 
-    filename = f"app/resources/LP_{month}_{year}.lp"
-    prob.writeLP(filename=filename)
-
     # Solve the problem
     prob.solve()
 
