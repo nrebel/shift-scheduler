@@ -2,12 +2,7 @@
 ## Description
 Basic web application for creating monthwise shift schedules
 
-## Prerequisites
-Before you begin, ensure you have met the following requirements:
-- macOS operating system
-- Admin rights on your machine
-
-## Installation Guide
+## Installation Guide for macOS
 
 ### Step 1: Install Homebrew
 Homebrew is a package manager for macOS that lets you install software directly from the command line. To install Homebrew, open your Terminal and run:
