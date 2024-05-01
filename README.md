@@ -63,3 +63,22 @@ python3 run.py
 ## Usage
 Access the web application via ```http://127.0.0.1:1111/index```
 
+# Running as a Docker Container
+
+## Install Docker via brew
+```bash
+brew  install --cask docker
+```
+
+Change into the cloned repository as mentioned above and run
+
+```bash
+docker build -t <yout-prefereed-image-name> .
+```
+to build a docker image.
+
+
+
+
+
+
