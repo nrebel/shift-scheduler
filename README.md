@@ -65,17 +65,28 @@ Access the web application via ```http://127.0.0.1:1111/index```
 
 # Running as a Docker Container
 
-## Install Docker via brew
+## Install colima via brew
 ```bash
-brew  install --cask docker
+brew  install colima
 ```
-
+## Install colima
 Change into the cloned repository as mentioned above and run
 
 ```bash
-docker build -t <yout-prefereed-image-name> .
+docker build -t <your-preferred-image-name> .
 ```
-to build a docker image.
+to build the docker image.
+
+### Start the container
+```bash
+docker run -p <localport>:1111 <your-preferred-image-name>
+```
+
+### Access the app in your browser
+Open ```http://127.0.0.1:<localport>/index```
+
+
+
 
 
 
